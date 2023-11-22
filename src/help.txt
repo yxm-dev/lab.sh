@@ -4,6 +4,7 @@ usage: lab [options] [arguments]     (general case)
 
 options:
     --config                          enter in the configuration mode
+    --info                            display info on how to contribute
     -h, --help                        display this help message
     -i, --index                       create the indexes
     -c, --convert                     convert the files from md to html

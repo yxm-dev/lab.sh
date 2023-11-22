@@ -1,5 +1,6 @@
 #! /bin/bash
-# MAIN FUNCTION
+
+# LAB FUNCTION
 function lab(){
 ## Includes
 source ${BASH_SOURCE%/*}/pkgfile
@@ -18,7 +19,7 @@ fi
         echo "# /lab/QA" > $LAB_QA/index.md
         echo "" >> $LAB_QA/index.md
         for dir in ${LAB_QA_dirs[@]}; do
-            name=${dir#"$LAB/md/QA/"}
+            name=${dir#"$LAB/QA/"}
             echo "* [$name]($name/index)" >> $LAB_QA/index.md
             mapfile -t LAB_QA_files < <(find $dir -type f ! -name index.md)
             declare -A LAB_QA_files_title
@@ -81,14 +82,13 @@ fi
             echo "Convert them first with \"lab -c\"."
         fi
     }
-## without options enter in the interactive mode or print help
+## Lab Function Properly
     if  [[ -z "$1" ]]; then
         if [[ -n "$LAB_EDITOR" ]]; then
             eval "$LAB_EDITOR $LAB"
         else
             cat $LAB_INSTALL/src/help.txt
         fi
-## "--config" option to enter in the configuration mode
     elif [[ "$1" == "--config" ]] && [[ -z "$2" ]]; then
           if [[ -f "$LAB_INSTALL/src/config.sh" ]] &&
              [[ -s "$LAB_INSTALL/src/config.sh" ]]; then
@@ -96,40 +96,40 @@ fi
         else
             echo "error: None configuration mode defined for the \"lab()\" function."
         fi
-## "-h" and "--help" options to print help
     elif ([[ "$1" == "-h" ]] || 
           [[ "$1" == "--help" ]]) &&
           [[ -z "$2" ]]; then
           cat $LAB_INSTALL/src/help.txt
-## "-u" and "--uninstall" options to execute the uninstall script
     elif [[ "$1" == "-u" ]] || [[ "$1" == "--uninstall" ]]; then
         cd $LAB_INSTALL/install
         sh uninstall
         cd - > /dev/null
-    elif [[ "$1" == "-i" ]]; then
+    elif [[ "$1" == "--info" ]]; then
+        cat $LAB_INSTALL/src/info.txt
+    elif [[ "$1" == "-i" ]] || [[ "$1" == "--index" ]]; then
             LAB_index_QA
     elif [[ "$1" == "-c" ]] || 
          [[ "$1" == "-cvt" ]] ||
          [[ "$1" == "--convert" ]]; then
             LAB_cvt
-    elif [[ "$1" == "-p" ]]; then
-        if [[ "$2" == "md" ]]; then
+    elif [[ "$1" == "-p" ]] || [[ "$1" == "--push" ]] || [[ "$1" == "push" ]]; then
+        if [[ "$2" == "md" ]] || [[ "$2" == "markdown" ]]; then
                 if [[ -n "$3" ]]; then
                     LAB_push_md "$3"
                 else
-                    echo "error: a commit message was not provided."
+                    echo "error: A commit message was not provided."
                 fi
             elif [[ "$2" == "html" ]]; then
                 if [[ -n "$3" ]]; then
                     LAB_push_html "$3"
                 else
-                    echo "error: a commit message was not provided."
+                    echo "error: A commit message was not provided."
                 fi
             elif [[ -n "$2" ]]; then
                 LAB_push_md "$2"
                 LAB_push_html "$2"
             else
-                echo "error: a commit message was not provided."
+                echo "error: A commit message was not provided."
             fi
 
     else 
@@ -137,10 +137,15 @@ fi
     fi
 }
 # ALIASES
-
 alias labi="lab -i"
 alias labc="lab -c"
 function labp(){
-    lab -p "$1"
+    if [[ -z "$1" ]]; then
+        echo "error: A commit message was not provided."
+    else
+        lab -i
+        lab -c
+        lab -p "$1"
+    fi
 }
    
