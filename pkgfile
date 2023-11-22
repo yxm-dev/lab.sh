@@ -1,0 +1,29 @@
+#! /bin/bash
+
+PKG_name="lab.sh"
+
+declare -a PKG_dependencies
+PKG_dependencies=(git, pandoc, rsync)
+
+declare -A PKG_distro_include
+
+PKG_distro_include["Debian"]="yes"
+PKG_distro_include["Arch"]="yes"
+PKG_distro_include["RedHat"]="yes"
+PKG_distro_include["openSUSE"]="yes"
+
+declare -A PKG_distro_package_name
+
+PKG_distro_package_name["Debian","git"]="git"
+PKG_distro_package_name["Debian","pandoc"]="pandoc"
+PKG_distro_package_name["Debian","rsync"]="rsync"
+PKG_distro_package_name["Arch","git"]="git"
+PKG_distro_package_name["Arch","pandoc"]="pandoc"
+PKG_distro_package_name["Arch","rsync"]="rsync"
+PKG_distro_package_name["RedHat","git"]="git"
+PKG_distro_package_name["RedHat","pandoc"]="pandoc"
+PKG_distro_package_name["RedHat","rsync"]="rsync"
+PKG_distro_package_name["openSUSE","git"]="git"
+PKG_distro_package_name["openSUSE","pandoc"]="pandoc"
+PKG_distro_package_name["openSUSE","rsync"]="rsync"
+

@@ -1,0 +1,8 @@
+
+mkdir $LAB_INSTALL/git
+cd $LAB_INSTALL/git
+echo "Cloning repositories..."
+git clone https://git@codeberg.org/yxm/lab > /dev/null
+git clone https://git@codeberg.org/yxm/lab.md > /dev/null
+
+

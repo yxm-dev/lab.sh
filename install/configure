@@ -1,0 +1,19 @@
+#! /bin/bash
+
+# including the pkgfile
+    MAIN_DIR=$(cd ../ && pwd)
+    source $MAIN_DIR/pkgfile
+
+    echo "Welcome come to the configuration step in the installation of \"$PKG_name\"."
+    printf "\nWhere do you want to install it? \nThe default location is \"$HOME/.config/$PKG_name\". To set it, just hit enter.\n"
+    read -r -e -p "> " INSTALL_DIR
+    if [[ -z $INSTALL_DIR ]]; then
+        INSTALL_DIR=$HOME/.config/$PKG_name
+    else
+        INSTALL_DIR=$INSTALL_DIR
+    fi
+    echo "Ok. It will be installed in \"$INSTALL_DIR\"."
+    echo "Configuring the installation..."
+    echo "LAB_INSTALL=$INSTALL_DIR" > $MAIN_DIR/.env
+    echo "Done."    
+

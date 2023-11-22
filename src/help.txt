@@ -1,0 +1,17 @@
+usage: lab [options] [arguments]     (general case)
+   or: lab                           print this help message or open the
+                                                          [lab directory 
+
+options:
+    --config                          enter in the configuration mode
+    -h, --help                        display this help message
+    -i, --index                       create the indexes
+    -c, --convert                     convert the files from md to html
+    -p, --push
+        md, markdown                  push the markdown files
+        html                          push the html files
+
+aliases:
+    labi = lab -i
+    labc = lab -c
+    labp = lab -i && lab -c && lab -p md && lab -p html
