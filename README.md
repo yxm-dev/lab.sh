@@ -22,14 +22,14 @@ To uninstall `lab`, execute the `uninstall` script or call the `--uninstall` opt
 The dependencies are the following, which should be automatically installed when executing the `install`
 script:
 
-* [git](https://git-scm.com/);
-* [sed](https://www.gnu.org/software/sed/);
-* [pandoc](https://github.com/jgm/pandoc);
+* [git](https://git-scm.com/)
+* [sed](https://www.gnu.org/software/sed/)
+* [pandoc](https://github.com/jgm/pandoc)
 * [rsync](https://github.com/WayneD/rsync).
 
 # Usage
 
-```bash
+```
 usage: lab [options] [arguments]     (general case)
    or: lab                           print this help message or open the
                                                           [lab directory 
@@ -48,23 +48,23 @@ aliases:
     labi = lab -i
     labc = lab -c
     labp = lab -i && lab -c && lab -p md && lab -p html
-``` 
+```
 
 # Configuration
 
 * After installed, `lab` must be configured before first usage: *execute `lab --config`*.
 
 The configuration is made through the following environment variables stored in a `.env` file:
-* `LAB_INSTALL`: *the directory where the `lab.sh` is installed*. This is fixed in the installation step when
+* `LAB_INSTALL`: the directory where the `lab.sh` is installed. This is fixed in the installation step when
   executing the `configure` script.
-* `LAB`: *the directory where the `.md` files will be located*. It is where the contributor will enter to 
+* `LAB`: the directory where the `.md` files will be located. It is where the contributor will enter to 
   create new QA, etc.
-* `LAB_MD` and `LAB_HTML`: *locations where the* [lab](https://codeberg.org/yxm/lab) *and* 
-  [lab.md](https://codeberg.org/yxm/lab.md) *repositories are cloned*. By default they are cloned in
+* `LAB_MD` and `LAB_HTML`: locations where the [lab](https://codeberg.org/yxm/lab) and 
+  [lab.md](https://codeberg.org/yxm/lab.md) repositories are cloned. By default they are cloned in
   `$LAB_INSTALL/git` when executing the `install` script.
-* `LAB_NAME`: *the contributor's full name*. This is used to create the branch in which the contributor will
-  work in.
-* `LAB_BRANCH`: *the contributor's branch*. This is constructed from `$LAB_NAME` in the `lab --config` step.
+* `LAB_NAME`: the contributor's full name. Used to create the branch in which the contributor will work in and,
+  in future, to build the contributors page.
+* `LAB_BRANCH`: the contributor's branch. Constructed from `$LAB_NAME` in the `lab --config` step.
 
 # To Do
 
