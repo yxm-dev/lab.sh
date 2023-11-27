@@ -12,6 +12,15 @@ if ! grep -q "LAB=" ${BASH_SOURCE%/*}/.env &&
     echo "error: Your instance of lab was not configured yet."
     echo "Configure it with \"lab --config\"."
 fi
+## Auxiliary Data
+    declare -a LAB_options
+    LAB_options=(QA doc def ref)
+    LAB_options_list="${LAB_options[0]}"
+    for i in ${!LAB_options[@]}; do
+        if [[ ! "$i" == "0" ]]; then
+            LAB_options_list="$LAB_options_list, ${LAB_options[$i]}"
+        fi
+    done
 ## Auxiliary Functions
     function LAB_index_QA(){
         LAB_QA=$LAB/QA
@@ -82,6 +91,105 @@ fi
             echo "Convert them first with \"lab -c\"."
         fi
     }
+    function LAB_new_QA_core(){
+        file="$LAB/QA/$topic/files/${QA_file}.md"
+        touch $file
+        echo "---" >> $file
+        echo "title: QA/$topic/$QA_file" >> $file
+        echo "---" >> $file
+        echo "" >> $file 
+        echo "The QA file \"$QA_file\" was created in the topic \"$topic\"."
+    }
+    function LAB_new_QA_file(){
+        echo "Enter the name of the QA file you want to create in the topic \"$topic\"."
+        mapfile -t LAB_QA_files < <(find $LAB/QA/$topic -type f ! -name index.md)
+        if [[ -n "${LAB_QA_files[@]}" ]]; then
+            echo "The following is the list of already existing topics."
+            for file in ${LAB_QA_files[@]}; do
+                LAB_QA_files_name[$file]=$(basename $file)
+                echo "* $(basename $file)"
+            done
+            while :
+            do
+                read -r -p "> " QA_file
+                if [[ "${LAB_QA_files_name[@]}" =~ "$QA_file" ]]; then
+                    echo "Please, enter a nonexisting QA file name."
+                    continue
+                else
+                    if [[ -z "$QA_file" ]]; then
+                        echo "Aborting..."
+                        break
+                    elif [[ $QA_file =~ ^[a-z\-]+$ ]]; then
+                        LAB_new_QA_core
+                        break
+                    else
+                        echo "Please, enter a QA file name containing only lowercase letters and dashes."
+                        continue
+                    fi
+                fi
+            done
+        else
+            while :
+            do
+                read -r -p "> " QA_file
+                if [[ -z "$QA_file" ]]; then
+                    echo "Aborting..."
+                    break
+                elif [[ $QA_file =~ ^[a-z\-]+$ ]]; then
+                    LAB_new_QA_core
+                    break
+                else
+                    echo "Please, enter a QA file name containing only lowercase letters and dashes."
+                    continue
+                fi
+            done
+        fi
+    }
+    function LAB_new_QA(){
+        echo "Enter the name of the topic in which you want to create your QA file."
+        echo "The following is the list of already existing topics."
+        LAB_QA=$LAB/QA
+        mapfile -t LAB_QA_dirs < <(find $LAB_QA -maxdepth 1 -type d ! -name QA)
+        declare -A LAB_QA_dirs_name
+        for dir in ${LAB_QA_dirs[@]}; do
+            LAB_QA_dirs_name[$dir]=${dir#"$LAB/QA/"}
+            echo "* ${dir#"$LAB/QA/"}"
+        done
+        read -r -p "> " topic
+        if [[ -z "$topic" ]]; then
+            echo "Aborting..."
+        elif [[ "${LAB_QA_dirs_name[@]}" =~ "$topic" ]]; then
+            LAB_new_QA_file
+        else
+            echo "Are you sure you want to create a new topic \"$topic\"? (yes/no)"
+            while :
+            do
+                read -r -p "> " yn
+                if [[ "$yn" == "y" ]] || [[ "$yn" == "yes" ]]; then
+                    mkdir $LAB_QA/$topic
+                    mkdir $LAB_QA/$topic/files
+                    touch $LAB_QA/$topic/index.md
+                    LAB_new_QA_file
+                    break
+                elif [[ "$yn" == "n" ]] || [[ "$yn" == "no" ]]; then
+                    echo "Aborting..."
+                    break
+                else
+                    echo "Please, write y/yes or n/no."
+                fi
+            done
+        fi
+    }
+    function LAB_new_doc(){
+        echo ""
+    }
+    function LAB_new_def(){
+        echo ""
+    }
+    function LAB_new_ref(){
+        echo ""
+    }
+
 ## Lab Function Properly
     if  [[ -z "$1" ]]; then
         if [[ -n "$LAB_EDITOR" ]]; then
@@ -106,6 +214,35 @@ fi
         cd - > /dev/null
     elif [[ "$1" == "--info" ]]; then
         cat $LAB_INSTALL/src/info.txt
+    elif [[ "$1" == "-n" ]] || [[ "$1" == "--new" ]]; then
+        if [[ -n "$2" ]]; then
+            if [[ "$2" == "QA" ]]; then
+                LAB_new_QA
+            elif [[ "$2" == "doc" ]]; then
+                LAB_new_doc
+            elif [[ "$2" == "def" ]]; then
+                LAB_new_def
+            elif [[ "$2" == "ref" ]]; then
+                LAB_new_ref
+            else
+                echo "error: Invalid argument. The available arguments are:"
+                echo "* $LAB_options_list"
+            fi
+        else
+            echo "What do you want to create?"
+            echo "Options: $LAB_options_list"
+            while :
+            do
+                read -r -p "> " create
+                if [[ "${LAB_options[@]}" =~ "$create" ]]; then
+                    eval "LAB_new_${create}"
+                    break
+                else
+                    echo "Please, enter a valid option."
+                    continue
+                fi
+            done
+        fi
     elif [[ "$1" == "-i" ]] || [[ "$1" == "--index" ]]; then
             LAB_index_QA
     elif [[ "$1" == "-c" ]] || 
@@ -139,6 +276,7 @@ fi
 # ALIASES
 alias labi="lab -i"
 alias labc="lab -c"
+alias labn="lab -n"
 function labp(){
     if [[ -z "$1" ]]; then
         echo "error: A commit message was not provided."
