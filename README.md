@@ -8,12 +8,15 @@ This repository contains a CLI to manage the [lab](https://lab.yxm.me) project.
 ```bash
     git clone https://github.com/yxm-dev/lab.sh
 ``` 
-2. Enter in the `install` dir and execute then `configure` script to set the installation directory:
+2. Enter in the `install` directory and execute then `configure` script to set the installation directory:
 ```bash
     cd lab.sh/install
     ./configure
 ```
-3. Execute the `install` script with `./install`.
+3. Execute the `install`: 
+```bash
+    ./install
+```
 
 To uninstall `lab`, execute the `uninstall` script or call the `--uninstall` option.
 
@@ -37,8 +40,9 @@ usage: lab [options] [arguments]     (general case)
 options:
     --config                          enter in the configuration mode
     -h, --help                        display this help message
-    --info                            display info on how to contribute 
-    -i, --index                       create the indexes
+    --info                            display info on how to contribute
+    -n, --new                         create a new QA, doc, def or ref file
+    -i, --index                       update the indexes
     -c, --convert                     convert the files from md to html
     -p, --push
         md, markdown                  push the markdown files
@@ -47,7 +51,7 @@ options:
 aliases:
     labi = lab -i
     labc = lab -c
-    labp = lab -i && lab -c && lab -p md && lab -p html
+    labp = follow the entire push pipeline
 ```
 
 # Configuration

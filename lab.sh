@@ -92,7 +92,7 @@ fi
         fi
     }
     function LAB_new_QA_core(){
-        file="$LAB/QA/$topic/files/${QA_file}.md"
+        file="/lab/$LAB/QA/$topic/files/${QA_file}.md"
         touch $file
         echo "---" >> $file
         echo "title: QA/$topic/$QA_file" >> $file
