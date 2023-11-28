@@ -4,12 +4,12 @@
     MAIN_DIR=$(cd ../ && pwd)
     source $MAIN_DIR/pkgfile
     source $MAIN_DIR/.env
-    source $MAIN_DIR/config/src/pm.sh
- \\    
+    source $MAIN_DIR/src/pm.sh
+     
 # UNINSTALL SCRIPT
     echo "Welcome to the uninstall of the package \"$PKG_name\"."
 
-    if [[ ! -d $LAB_INSTALL ]]; then
+    if [[ ! -d $INSTALL_DIR ]]; then
         echo "The application \"$PKG_name\" is not installed."
     else
         while :
@@ -41,8 +41,8 @@
             done
 
             echo "Uninstalling \"$PKG_name\"..."
-            rm -r $LAB_INSTALL
-            echo -e -n "Optionally, go to your \"~/.bashrc\" file and delete the following lines:\n---\nif [[ -f $LAB_INSTALL/$PKG_name.sh ]]; then \n    source $LAB_INSTALL/$PKG_name.sh \nfi\n---\n"
+            rm -r $INSTALL_DIR
+            echo -e -n "Optionally, go to your \"~/.bashrc\" file and delete the following lines:\n---\nif [[ -f $INSTALL_DIR/$PKG_name.sh ]]; then \n    source $INSTALL_DIR/$PKG_name.sh \nfi\n---\n"
             echo "Uninstalling has been finished."
             break
 
