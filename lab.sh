@@ -25,14 +25,18 @@ fi
     function LAB_index_QA(){
         LAB_QA=$LAB/QA
         mapfile -t LAB_QA_dirs < <(find $LAB_QA -maxdepth 1 -type d ! -name QA)
-        echo "# /lab/QA" > $LAB_QA/index.md
+        echo "---" > $LAB_QA/index.md
+        echo "title: /lab/QA" >> $LAB_QA/index.md
+        echo "---" >> $LAB_QA/index.md
         echo "" >> $LAB_QA/index.md
         for dir in ${LAB_QA_dirs[@]}; do
             name=${dir#"$LAB/QA/"}
             echo "* [$name]($name/index)" >> $LAB_QA/index.md
             mapfile -t LAB_QA_files < <(find $dir -type f ! -name index.md)
             declare -A LAB_QA_files_title
-            echo "# /lab/QA/$name" > $dir/index.md
+            echo "---" > $dir/index.md
+            echo "title: /lab/QA/$name" >> $dir/index.md
+            echo "---" >> $dir/index.md
             echo "" >> $dir/index.md
             for file in ${LAB_QA_files[@]}; do
                 relative_path=${file#"$dir/"}
@@ -43,6 +47,52 @@ fi
             done
         done
     }
+    function LAB_index_doc(){
+        LAB_doc=$LAB/doc
+        mapfile -t LAB_doc_files < <(find $LAB_doc -type f ! -name index.md)
+        echo "---" > $LAB_doc/index.md
+        echo "title: /lab/doc" >> $LAB_doc/index.md
+        echo "---" >> $LAB_doc/index.md
+        echo "" >> $LAB_doc/index.md
+        for file in ${LAB_doc_files[@]}; do
+            relative_path=${file#"$LAB_doc/"}
+            relative_path=${relative_path%.*}
+            name=${file##*/}
+            name=${name%.*}
+            echo "* [$name]($relative_path)" >> $LAB_doc/index.md
+        done
+    }
+    function LAB_index_def(){
+        LAB_def=$LAB/def
+        mapfile -t LAB_def_files < <(find $LAB_def -type f ! -name index.md)
+        echo "---" > $LAB_def/index.md
+        echo "title: /lab/def" >> $LAB_def/index.md
+        echo "---" >> $LAB_def/index.md
+        echo "" >> $LAB_def/index.md
+        for file in ${LAB_def_files[@]}; do
+            relative_path=${file#"$LAB_def/"}
+            relative_path=${relative_path%.*}
+            name=${file##*/}
+            name=${name%.*}
+            echo "* [$name]($relative_path)" >> $LAB_def/index.md
+        done
+    }
+    function LAB_index_ref(){
+        LAB_ref=$LAB/ref
+        mapfile -t LAB_ref_files < <(find $LAB_ref -type f ! -name index.md)
+        echo "---" > $LAB_ref/index.md
+        echo "title: /lab/ref" >> $LAB_ref/index.md
+        echo "---" >> $LAB_ref/index.md
+        echo "" >> $LAB_ref/index.md
+        for file in ${LAB_ref_files[@]}; do
+            relative_path=${file#"$LAB_ref/"}
+            relative_path=${relative_path%.*}
+            name=${file##*/}
+            name=${name%.*}
+            echo "* [$name]($relative_path)" >> $LAB_ref/index.md
+        done
+    }
+
     function LAB_cvt_core(){
         name=$(basename $1)
         sed -r 's/(\[.+\])\(([^)]+)\)/\1(\2.html)/g; s/(\[\[.+\]\])/\1(\1.html)/g' < "$1" | pandoc -s $1 -t html5 --template $LAB_TPL | sed -r 's/<li>(.*)\[ \]/<li class="todo done0">\1/g; s/<li>(.*)\[X\]/<li class="todo done4">\1/g; s/https:(.*).html/https:\1/g; s/.md.html/.html/g;' > "$name.html"
@@ -244,7 +294,14 @@ fi
             done
         fi
     elif [[ "$1" == "-i" ]] || [[ "$1" == "--index" ]]; then
+            echo "Generating index of QA files..."
             LAB_index_QA
+            echo "Generating index of doc files..."
+            LAB_index_doc
+            echo "Generating index of def files..."
+            LAB_index_def
+            echo "Generating index of ref files..."
+            LAB_index_ref
     elif [[ "$1" == "-c" ]] || 
          [[ "$1" == "-cvt" ]] ||
          [[ "$1" == "--convert" ]]; then
