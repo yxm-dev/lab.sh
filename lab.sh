@@ -24,28 +24,50 @@ fi
 ## Auxiliary Functions
     function LAB_index_QA(){
         LAB_QA=$LAB/QA
+        LAB_QA_URL="https://lab.yxm.me/QA"
         mapfile -t LAB_QA_dirs < <(find $LAB_QA -maxdepth 1 -type d ! -name QA)
         echo "---" > $LAB_QA/index.md
         echo "title: /lab/QA" >> $LAB_QA/index.md
         echo "---" >> $LAB_QA/index.md
         echo "" >> $LAB_QA/index.md
+        echo "* [all](all) ([pdf](all.pdf)) \" >> $LAB_QA/index.md 
+        echo "\" >> $LAB_QA/index.md
+
+        echo "" > $LAB_QA/all.md
+        echo "---" > $LAB_QA/all.md
+        echo "title: /lab/QA/all" >> $LAB_QA/all.md
+        echo "author: DevOps Collab" >> $LAB_QA/all.md
+        today=$(date +"%B %d, %Y")
+        echo "date: $today" >> $LAB_QA/all.md
+        echo "documentclass: book" >> $LAB_QA/all.md
+        echo "---" >> $LAB_QA/all.md
+        echo "" >> $LAB_QA/all.md
+
         for dir in ${LAB_QA_dirs[@]}; do
-            name=${dir#"$LAB/QA/"}
-            echo "* [$name]($name/index)" >> $LAB_QA/index.md
+            dirname=${dir#"$LAB/QA/"}
+            echo "* [$dirname]($dirname/index)" >> $LAB_QA/index.md
             mapfile -t LAB_QA_files < <(find $dir -type f ! -name index.md)
             declare -A LAB_QA_files_title
             echo "---" > $dir/index.md
-            echo "title: /lab/QA/$name" >> $dir/index.md
+            echo "title: /lab/QA/$dirname" >> $dir/index.md
             echo "---" >> $dir/index.md
             echo "" >> $dir/index.md
+
             for file in ${LAB_QA_files[@]}; do
                 relative_path=${file#"$dir/"}
                 relative_path=${relative_path%.*}
                 name=${file##*/}
                 name=${name%.*}
                 echo "* [$name]($relative_path)" >> $dir/index.md
+
+                cp -r $file /tmp/$name
+                sed -i '/^---$/,/^---$/d' /tmp/$name
+                echo "# [$dirname: $name]($LAB_QA_URL/$dirname/files/${name}.html)" >> $LAB_QA/all.md
+                cat /tmp/$name >> $LAB_QA/all.md
+                echo "" >> $LAB_QA/all.md
             done
         done
+        pandoc $LAB_QA/all.md --pdf-engine=pdflatex --include-in-header=$LAB_INSTALL/src/preamble.sty --toc --toc-depth=1 -o $LAB_QA/all.pdf
     }
     function LAB_index_doc(){
         LAB_doc=$LAB/doc
@@ -97,6 +119,10 @@ fi
         name=$(basename $1)
         sed -r 's/(\[.+\])\(([^)]+)\)/\1(\2.html)/g; s/(\[\[.+\]\])/\1(\1.html)/g' < "$1" | pandoc -s $1 -t html5 --template $LAB_TPL | sed -r 's/<li>(.*)\[ \]/<li class="todo done0">\1/g; s/<li>(.*)\[X\]/<li class="todo done4">\1/g; s/https:(.*).html/https:\1/g; s/.md.html/.html/g;' > "$name.html"
     }
+    function LAB_cvt_toc(){
+        name=$(basename $1)
+        sed -r 's/(\[.+\])\(([^)]+)\)/\1(\2.html)/g; s/(\[\[.+\]\])/\1(\1.html)/g' < "$1" | pandoc -s $1 -t html5 --toc --toc-depth=1 --template $LAB_TPL | sed -r 's/<li>(.*)\[ \]/<li class="todo done0">\1/g; s/<li>(.*)\[X\]/<li class="todo done4">\1/g; s/https:(.*).html/https:\1/g; s/.md.html/.html/g;' > "$name.html"
+    }
     function LAB_cvt(){
         if [[ -d "$LAB_INSTALL/html" ]]; then
             rm -r $LAB_INSTALL/html
@@ -105,13 +131,20 @@ fi
             mkdir $LAB_INSTALL/html
         fi
         cp -r $LAB/* $LAB_INSTALL/html
-        htmlfiles=$(find $LAB_INSTALL/html -type f -name "*.md" ! -name "README.md")
+        mdfiles=$(find $LAB_INSTALL/html -type f -name "*.md" ! -name "README.md" ! -name "all.md")
         cwd=$PWD
-        for f in ${htmlfiles[@]}; do
+        for f in ${mdfiles[@]}; do
             echo "converting $f..."
             dir=$(dirname $f)
             cd $dir
             LAB_cvt_core $f > /dev/null 2>&1 
+        done
+        allfiles=$(find $LAB_INSTALL/html -type f -name "all.md")
+        for f in ${allfiles[@]}; do
+            echo "converting $f..."
+            dir=$(dirname $f)
+            cd $dir
+            LAB_cvt_toc $f > /dev/null 2>&1 
         done
         cd $cwd
         echo "fixing possible errors..."
@@ -120,7 +153,7 @@ fi
         echo "Done!"
     }
     function LAB_push_md(){
-        rsync -av --progress --delete  --exclude '.git/*' --exclude 'README.md' $LAB/ $LAB_MD/md
+        rsync -av --progress --delete  --exclude '.git/*' --exclude 'README.md' $LAB/ $LAB_MD/md > /dev/null 2>&1
         cd $LAB_MD
         git add .
         git commit -m "$1"
@@ -129,7 +162,7 @@ fi
     }
     function LAB_push_html(){
         if [[ -d "$LAB_INSTALL/html" ]]; then
-            rsync -av --progress --delete  --exclude '.git/*' --exclude '.domains' --exclude 'tpl/*' $LAB_INSTALL/html/ $LAB_HTML
+            rsync -av --progress --delete  --exclude '.git/*' --exclude '.domains' --exclude 'tpl/*' $LAB_INSTALL/html/ $LAB_HTML > /dev/null 2>&1
             rm -r $LAB_INSTALL/html
             cd $LAB_HTML
             git add .
