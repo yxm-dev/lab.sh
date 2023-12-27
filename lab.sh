@@ -452,6 +452,7 @@ fi
         echo "error: Option not defined for the \"lab()\" function."
     fi
 }
+
 # ALIASES
 alias labi="lab -i"
 alias labc="lab -c"
@@ -463,7 +464,7 @@ function labp(){
     else
         lab -i
         lab -c
-        lab -p "$1"
+        lab -ps "$1"
     fi
 }
    
