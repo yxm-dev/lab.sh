@@ -35,7 +35,18 @@ fi
         cd $LAB_MD
         git pull lab_md master 
         cd $cwd
-        rsync -av --progress --exclude '.git/*' --exclude 'README.md' $LAB_MD/md $LAB/ > /dev/null 2>&1
+        rsync -av --progress --exclude '.git/*' --exclude 'README.md' --exclude 'index.md' --exclude 'all.md' --exclude 'all.pdf' $LAB_MD/md/ $LAB/ > /dev/null 2>&1
+        mapfile -t LAB_QA_dirs < <(find $LAB/QA -maxdepth 1 -type d ! -name QA)
+        for dir in ${LAB_QA_dirs[@]}; do
+            mv $dir/files/* $dir
+            rm -r $dir/files*
+        done
+        mv $LAB/def/files/* $LAB/def
+        rm -r $LAB/def/files
+        mv $LAB/doc/files/* $LAB/doc
+        rm -r $LAB/doc/files
+        mv $LAB/ref/files/* $LAB/ref
+        rm -r $LAB/ref/files
     }
     function LAB_index_QA(){
         LAB_QA=$LAB/QA
