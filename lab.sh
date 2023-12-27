@@ -11,6 +11,7 @@ if ! grep -q "LAB=" ${BASH_SOURCE%/*}/.env &&
    ! grep -q "LAB_NAME=" ${BASH_SOURCE%/*}/.env; then
     echo "error: Your instance of lab was not configured yet."
     echo "Configure it with \"lab --config\"."
+    return
 fi
 ## Auxiliary Data
     declare -a LAB_options
@@ -22,97 +23,130 @@ fi
         fi
     done
 ## Auxiliary Functions
+    function LAB_clean(){
+        echo "Cleaning temporary files..."
+        rm -r $LAB_TMP/md
+        rm -r $LAB_TMP/html
+        mkdir $LAB_TMP/md
+        mkdir $LAB_TMP/html
+    }
+    function LAB_pull(){
+        cwd=$PWD
+        cd $LAB_MD/md
+        git pull lab_md master 
+        cd $cwd
+        rsync -av --progress --exclude '.git/*' --exclude 'README.md' $LAB_MD/md/ $LAB/ > /dev/null 2>&1
+    }
     function LAB_index_QA(){
         LAB_QA=$LAB/QA
+        LAB_QA_TMP=$LAB_TMP/md/QA 
+        mkdir $LAB_QA_TMP
         LAB_QA_URL="https://lab.yxm.me/QA"
+        LAB_QA_TMP_URL=""
+        LAB_QA_all="$LAB_QA_URL/all.md"
+        LAB_QA_all_pdf="$LAB_QA_URL/all.pdf"
         mapfile -t LAB_QA_dirs < <(find $LAB_QA -maxdepth 1 -type d ! -name QA)
-        echo "---" > $LAB_QA/index.md
-        echo "title: /lab/QA" >> $LAB_QA/index.md
-        echo "---" >> $LAB_QA/index.md
-        echo "" >> $LAB_QA/index.md
-        echo "* [all](all) ([pdf](all.pdf)) \" >> $LAB_QA/index.md 
-        echo "\" >> $LAB_QA/index.md
+        echo "---" > $LAB_QA_TMP/index.md
+        echo "title: /lab/QA" >> $LAB_QA_TMP/index.md
+        echo "---" >> $LAB_QA_TMP/index.md
+        echo "" >> $LAB_QA_TMP/index.md
+        echo "* [all]($LAB_QA_all) ([pdf]($LAB_QA_all_pdf)) \" >> $LAB_QA_TMP/index.md 
+        echo "\" >> $LAB_QA_TMP/index.md
 
-        echo "" > $LAB_QA/all.md
-        echo "---" > $LAB_QA/all.md
-        echo "title: /lab/QA/all" >> $LAB_QA/all.md
-        echo "author: DevOps Collab" >> $LAB_QA/all.md
+        echo "" > $LAB_QA_TMP/all.md
+        echo "---" > $LAB_QA_TMP/all.md
+        echo "title: /lab/QA/all" >> $LAB_QA_TMP/all.md
+        echo "author: DevOps Collab" >> $LAB_QA_TMP/all.md
         today=$(date +"%B %d, %Y")
-        echo "date: $today" >> $LAB_QA/all.md
-        echo "documentclass: book" >> $LAB_QA/all.md
-        echo "---" >> $LAB_QA/all.md
-        echo "" >> $LAB_QA/all.md
+        echo "date: $today" >> $LAB_QA_TMP/all.md
+        echo "documentclass: book" >> $LAB_QA_TMP/all.md
+        echo "---" >> $LAB_QA_TMP/all.md
+        echo "" >> $LAB_QA_TMP/all.md
 
         for dir in ${LAB_QA_dirs[@]}; do
-            dirname=${dir#"$LAB/QA/"}
-            echo "* [$dirname]($dirname/index)" >> $LAB_QA/index.md
+            dirname=${dir#"$LAB_QA/"}
+            dir_tmp=$LAB_QA_TMP/$dirname
+            mkdir $dir_tmp
+            index_url="$LAB_QA_URL/$dirname/index.html"
+            echo "* [$dirname]($index_url)" >> $LAB_QA_TMP/index.md
             mapfile -t LAB_QA_files < <(find $dir -type f ! -name index.md)
             declare -A LAB_QA_files_title
-            echo "---" > $dir/index.md
-            echo "title: /lab/QA/$dirname" >> $dir/index.md
-            echo "---" >> $dir/index.md
-            echo "" >> $dir/index.md
+            echo "---" > $dir_tmp/index.md
+            echo "title: /lab/QA/$dirname" >> $dir_tmp/index.md
+            echo "---" >> $dir_tmp/index.md
+            echo "" >> $dir_tmp/index.md
 
-            for file in ${LAB_QA_files[@]}; do
-                relative_path=${file#"$dir/"}
-                relative_path=${relative_path%.*}
+            for file in ${LAB_QA_files[@]}; do 
                 name=${file##*/}
                 name=${name%.*}
-                echo "* [$name]($relative_path)" >> $dir/index.md
+                echo "* [$name]($LAB_QA_URL/$dirname/${name}.html)" >> $dir_tmp/index.md
 
                 cp -r $file /tmp/$name
                 sed -i '/^---$/,/^---$/d' /tmp/$name
-                echo "# [$dirname: $name]($LAB_QA_URL/$dirname/files/${name}.html)" >> $LAB_QA/all.md
-                cat /tmp/$name >> $LAB_QA/all.md
-                echo "" >> $LAB_QA/all.md
+                echo "# [$dirname: $name]($LAB_QA_URL/$dirname/${name}.html)" >> $LAB_QA_TMP/all.md
+                cat /tmp/$name >> $LAB_QA_TMP/all.md
+                echo "" >> $LAB_QA_TMP/all.md
             done
         done
-        pandoc $LAB_QA/all.md --pdf-engine=pdflatex --include-in-header=$LAB_INSTALL/src/preamble.sty --toc --toc-depth=1 -o $LAB_QA/all.pdf
+        pandoc $LAB_QA_TMP/all.md --pdf-engine=pdflatex --include-in-header=$LAB_INSTALL/src/preamble.sty --toc --toc-depth=1 -o $LAB_QA_TMP/all.pdf
     }
     function LAB_index_doc(){
         LAB_doc=$LAB/doc
+        LAB_doc_TMP=$LAB_TMP/md/doc
+        mkdir $LAB_doc_TMP
+        LAB_doc_URL="https://lab.yxm.me/doc"
+        LAB_doc_TMP_URL=""
+        LAB_doc_all="$LAB_doc_URL/all.md"
+        LAB_doc_all_pdf="$LAB_doc_URL/all.pdf"
         mapfile -t LAB_doc_files < <(find $LAB_doc -type f ! -name index.md)
-        echo "---" > $LAB_doc/index.md
-        echo "title: /lab/doc" >> $LAB_doc/index.md
-        echo "---" >> $LAB_doc/index.md
-        echo "" >> $LAB_doc/index.md
-        for file in ${LAB_doc_files[@]}; do
-            relative_path=${file#"$LAB_doc/"}
-            relative_path=${relative_path%.*}
+        echo "---" > $LAB_doc_TMP/index.md
+        echo "title: /lab/doc" >> $LAB_doc_TMP/index.md
+        echo "---" >> $LAB_doc_TMP/index.md
+        echo "" >> $LAB_doc_TMP/index.md
+        for file in ${LAB_doc_files[@]}; do 
             name=${file##*/}
             name=${name%.*}
-            echo "* [$name]($relative_path)" >> $LAB_doc/index.md
+            echo "* [$name]($LAB_doc_URL/${name}.html)" >> $LAB_doc_TMP/index.md
         done
     }
     function LAB_index_def(){
         LAB_def=$LAB/def
+        LAB_def_TMP=$LAB_TMP/md/def
+        mkdir $LAB_def_TMP
+        LAB_def_URL="https://lab.yxm.me/def"
+        LAB_def_TMP_URL=""
+        LAB_def_all="$LAB_def_URL/all.md"
+        LAB_def_all_pdf="$LAB_def_URL/all.pdf"
         mapfile -t LAB_def_files < <(find $LAB_def -type f ! -name index.md)
-        echo "---" > $LAB_def/index.md
-        echo "title: /lab/def" >> $LAB_def/index.md
-        echo "---" >> $LAB_def/index.md
-        echo "" >> $LAB_def/index.md
-        for file in ${LAB_def_files[@]}; do
-            relative_path=${file#"$LAB_def/"}
-            relative_path=${relative_path%.*}
+        echo "---" > $LAB_def_TMP/index.md
+        echo "title: /lab/def" >> $LAB_def_TMP/index.md
+        echo "---" >> $LAB_def_TMP/index.md
+        echo "" >> $LAB_def_TMP/index.md
+        for file in ${LAB_def_files[@]}; do 
             name=${file##*/}
             name=${name%.*}
-            echo "* [$name]($relative_path)" >> $LAB_def/index.md
+            echo "* [$name]($LAB_def_URL/${name}.html)" >> $LAB_def_TMP/index.md
         done
+ 
     }
     function LAB_index_ref(){
         LAB_ref=$LAB/ref
+        LAB_ref_TMP=$LAB_TMP/md/ref
+        mkdir $LAB_ref_TMP
+        LAB_ref_URL="https://lab.yxm.me/ref"
+        LAB_ref_TMP_URL=""
+        LAB_ref_all="$LAB_ref_URL/all.md"
+        LAB_ref_all_pdf="$LAB_ref_URL/all.pdf"
         mapfile -t LAB_ref_files < <(find $LAB_ref -type f ! -name index.md)
-        echo "---" > $LAB_ref/index.md
-        echo "title: /lab/ref" >> $LAB_ref/index.md
-        echo "---" >> $LAB_ref/index.md
-        echo "" >> $LAB_ref/index.md
-        for file in ${LAB_ref_files[@]}; do
-            relative_path=${file#"$LAB_ref/"}
-            relative_path=${relative_path%.*}
+        echo "---" > $LAB_ref_TMP/index.md
+        echo "title: /lab/ref" >> $LAB_ref_TMP/index.md
+        echo "---" >> $LAB_ref_TMP/index.md
+        echo "" >> $LAB_ref_TMP/index.md
+        for file in ${LAB_ref_files[@]}; do 
             name=${file##*/}
             name=${name%.*}
-            echo "* [$name]($relative_path)" >> $LAB_ref/index.md
-        done
+            echo "* [$name]($LAB_ref_URL/${name}.html)" >> $LAB_ref_TMP/index.md
+        done 
     }
 
     function LAB_cvt_core(){
@@ -139,7 +173,23 @@ fi
             cd $dir
             LAB_cvt_core $f > /dev/null 2>&1 
         done
-        allfiles=$(find $LAB_INSTALL/html -type f -name "all.md")
+        cd $cwd
+        echo "fixing possible errors..."
+        find $LAB_INSTALL/html -type f -name "*.md" -delete
+        find $LAB_INSTALL/html -name '*.md.html' -execdir bash -c 'mv -i "$1" "${1//.md.html/.html}"' bash {} \;
+        echo "Done!"
+    }
+    function LAB_cvt_index(){
+        cp -r $LAB_TMP/md/* $LAB_TMP/html
+        mdfiles=$(find $LAB_TMP/html -type f -name "*.md" ! -name "README.md" ! -name "all.md")
+        cwd=$PWD
+        for f in ${mdfiles[@]}; do
+            echo "converting $f..."
+            dir=$(dirname $f)
+            cd $dir
+            LAB_cvt_core $f > /dev/null 2>&1 
+        done
+        allfiles=$(find $LAB_TMP/html -type f -name "all.md")
         for f in ${allfiles[@]}; do
             echo "converting $f..."
             dir=$(dirname $f)
@@ -148,34 +198,60 @@ fi
         done
         cd $cwd
         echo "fixing possible errors..."
-        find $LAB_INSTALL/html -type f -name "*.md" -delete
-        find $LAB_INSTALL/html -name '*.md.html' -execdir bash -c 'mv -i "$1" "${1//.md.html/.html}"' bash {} \;
+        find $LAB_TMP/html -type f -name "*.md" -delete
+        find $LAB_TMP/html -name '*.md.html' -execdir bash -c 'mv -i "$1" "${1//.md.html/.html}"' bash {} \;
         echo "Done!"
     }
     function LAB_push_md(){
         rsync -av --progress --delete  --exclude '.git/*' --exclude 'README.md' $LAB/ $LAB_MD/md > /dev/null 2>&1
+        cwd=$PWD
         cd $LAB_MD
-        git add .
-        git commit -m "$1"
-        git push lab_md $LAB_BRANCH
+        echo "pushing markdown files..."
+        git add . > /dev/null
+        git commit -m "$1" > /dev/null
+        git push lab_md $LAB_BRANCH > /dev/null
         echo "Done!"
+        cd $cwd
     }
     function LAB_push_html(){
         if [[ -d "$LAB_INSTALL/html" ]]; then
             rsync -av --progress --delete  --exclude '.git/*' --exclude '.domains' --exclude 'tpl/*' $LAB_INSTALL/html/ $LAB_HTML > /dev/null 2>&1
             rm -r $LAB_INSTALL/html
+            cwd=$PWD
             cd $LAB_HTML
-            git add .
-            git commit -m "$1"
-            git push lab_html $LAB_BRANCH
+            echo "pushing html files..."
+            git add . > /dev/null
+            git commit -m "$1" > /dev/null
+            git pull lab_html master > /dev/null
+            git push lab_html $LAB_BRANCH > /dev/null
             echo "Done!"
+            cd $cwd
         else
             echo "error: The .md files were not converted."
             echo "Convert them first with \"lab -c\"."
         fi
+    } 
+    function LAB_push_index(){
+        echo "pushing index files..."
+        cp -r $LAB_TMP/html/* $LAB_HTML
+        cwd=$PWD
+        cd $LAB_HTML
+        git add . > /dev/null
+        git commit -m "updating indexes..." > /dev/null
+        git push lab_html $LAB_BRANCH > /dev/null
+        cd $cwd
+
+        cp -r $LAB_TMP/md/* $LAB_MD
+        cwd=$PWD
+        cd $LAB_MD
+        git add . > /dev/null
+        git commit -m "updating indexes..." > /dev/null
+        git push lab_md $LAB_BRANCH > /dev/null
+        cd $cwd
     }
+
     function LAB_new_QA_core(){
-        file="/lab/$LAB/QA/$topic/files/${QA_file}.md"
+        file="$LAB/QA/$topic/files/${QA_file}.md"
         touch $file
         echo "---" >> $file
         echo "title: QA/$topic/$QA_file" >> $file
@@ -276,6 +352,7 @@ fi
 ## Lab Function Properly
     if  [[ -z "$1" ]]; then
         if [[ -n "$LAB_EDITOR" ]]; then
+            LAB_pull
             eval "$LAB_EDITOR $LAB"
         else
             cat $LAB_INSTALL/src/help.txt
@@ -326,39 +403,51 @@ fi
                 fi
             done
         fi
+    elif [[ "$1" == "-cl" ]] || [[ "$1" == "--clean" ]]; then
+            LAB_clean
     elif [[ "$1" == "-i" ]] || [[ "$1" == "--index" ]]; then
-            echo "Generating index of QA files..."
-            LAB_index_QA
-            echo "Generating index of doc files..."
-            LAB_index_doc
-            echo "Generating index of def files..."
-            LAB_index_def
-            echo "Generating index of ref files..."
-            LAB_index_ref
+        LAB_clean
+        echo "Generating index of QA files..."
+        LAB_index_QA
+        echo "Generating index of doc files..."
+        LAB_index_doc
+        echo "Generating index of def files..."
+        LAB_index_def 
+        echo "Generating index of ref files..."
+        LAB_index_ref
     elif [[ "$1" == "-c" ]] || 
          [[ "$1" == "-cvt" ]] ||
-         [[ "$1" == "--convert" ]]; then
+         [[ "$1" == "--convert" ]]; then 
             LAB_cvt
-    elif [[ "$1" == "-p" ]] || [[ "$1" == "--push" ]] || [[ "$1" == "push" ]]; then
+            LAB_cvt_index
+    elif [[ "$1" == "-ps" ]] || [[ "$1" == "--push" ]] || [[ "$1" == "push" ]]; then
         if [[ "$2" == "md" ]] || [[ "$2" == "markdown" ]]; then
-                if [[ -n "$3" ]]; then
-                    LAB_push_md "$3"
-                else
-                    echo "error: A commit message was not provided."
-                fi
-            elif [[ "$2" == "html" ]]; then
-                if [[ -n "$3" ]]; then
-                    LAB_push_html "$3"
-                else
-                    echo "error: A commit message was not provided."
-                fi
-            elif [[ -n "$2" ]]; then
-                LAB_push_md "$2"
-                LAB_push_html "$2"
+            if [[ -n "$3" ]]; then
+                LAB_push_md "$3"
+            else
+               echo "error: A commit message was not provided."
+            fi
+        elif [[ "$2" == "html" ]]; then
+            if [[ -n "$3" ]]; then
+                LAB_push_html "$3"
             else
                 echo "error: A commit message was not provided."
             fi
-
+        elif [[ "$2" == "index" ]]; then
+            if [[ -n "$3" ]]; then
+                LAB_push_index "$3"
+            else
+                echo "error: A commit message was not provided."
+            fi
+        elif [[ -n "$2" ]]; then
+            LAB_push_md "$2"
+            LAB_push_html "$2"
+            LAB_push_index "$2"
+        else
+            echo "error: A commit message was not provided."
+        fi
+    elif [[ "$1" == "-pl" ]] || [[ "$1" == "--pull" ]] || [[ "$1" == "pull" ]]; then
+        LAB_pull
     else 
         echo "error: Option not defined for the \"lab()\" function."
     fi
@@ -366,6 +455,7 @@ fi
 # ALIASES
 alias labi="lab -i"
 alias labc="lab -c"
+alias labcl="lab -i"
 alias labn="lab -n"
 function labp(){
     if [[ -z "$1" ]]; then

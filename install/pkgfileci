@@ -3,6 +3,14 @@ mkdir $LAB_INSTALL/git
 cd $LAB_INSTALL/git
 echo "Cloning repositories..."
 git clone https://git@codeberg.org/yxm/lab > /dev/null
+cd lab 
+git remote add lab_html ssh://git@codeberg.org/yxm/lab
 git clone https://git@codeberg.org/yxm/lab.md > /dev/null
+cd ../lab.md
+git remote add lab_md ssh://git@codeberg.org/yxm/lab.md
+git clone https://git@codeberg.org/yxm/lab.tpm > /dev/null
+cd ../lab.tmp
+git remote add lab_tmp ssh://git@codeberg.org/yxm/lab.tmp
+cd ..
 
 

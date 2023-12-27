@@ -16,11 +16,13 @@ if [[ -z "$lab_dir" ]]; then
         echo "LAB=$PWD/lab" >> $LAB_INSTALL/.env
         echo "LAB_MD=$LAB_INSTALL/git/lab.md" >> $LAB_INSTALL/.env
         echo "LAB_HTML=$LAB_INSTALL/git/lab" >> $LAB_INSTALL/.env
+        echo "LAB_TMP=$LAB_INSTALL/git/lab.tmp" >> $LAB_INSTALL/.env
     fi
 else
     echo "$lab_dir" >> $LAB_INSTALL/.env
     echo "LAB_MD=$LAB_INSTALL/git/lab.md" >> $LAB_INSTALL/.env
     echo "LAB_HTML=$LAB_INSTALL/git/lab" >> $LAB_INSTALL/.env
+    echo "LAB_TMP=$LAB_INSTALL/git/lab.tmp" >> $LAB_INSTALL/.env
 fi
 
 echo "Enter your full name."
