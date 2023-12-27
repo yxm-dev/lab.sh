@@ -32,10 +32,10 @@ fi
     }
     function LAB_pull(){
         cwd=$PWD
-        cd $LAB_MD/md
+        cd $LAB_MD
         git pull lab_md master 
         cd $cwd
-        rsync -av --progress --exclude '.git/*' --exclude 'README.md' $LAB_MD/md/ $LAB/ > /dev/null 2>&1
+        rsync -av --progress --exclude '.git/*' --exclude 'README.md' $LAB_MD/md $LAB/ > /dev/null 2>&1
     }
     function LAB_index_QA(){
         LAB_QA=$LAB/QA
@@ -241,7 +241,7 @@ fi
         git push lab_html $LAB_BRANCH > /dev/null
         cd $cwd
 
-        cp -r $LAB_TMP/md/* $LAB_MD
+        cp -r $LAB_TMP/md/* $LAB_MD/md
         cwd=$PWD
         cd $LAB_MD
         git add . > /dev/null
